@@ -22,7 +22,7 @@ Auth::routes();
 Route::get('/home', 'HomeController@index')->name('home');
 
 //profileへのルート(編集用)
-Route::get('profile','profileController@showProfile');
+Route::get('profile/{user_id?}','profileController@showProfile');
 
 //profileへのルート(検索時のポスト送信)
 Route::post('profile/{user_id?}','profileController@showProfile');

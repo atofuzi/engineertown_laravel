@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Library\MyFunc;
 use App\User;
 use App\Profile;
 use App\Output;
 use App\Information;
 use App\Frienduser;
 use App\Likeoutput;
+use App\Board;
 use DB;
 use Log;
 
@@ -21,7 +23,7 @@ class ProfileController extends Controller{
         ];
 
         //プロフィール表示するユーザーidを$data['u_id']へ格納
-        if(!empty($user_id)){
+        if(!empty($user_id)){ 
             $data = [
                 'u_id' => $user_id
             ];
@@ -30,94 +32,79 @@ class ProfileController extends Controller{
                 'u_id' => $req->session()->get('user_id')
             ];
         }
+        
         //自分自身のidをmy_idとして格納
         $data = $data + array('my_id'=>$req->session()->get('user_id'));
 
         //user_idでプロフィール表示するユーザー情報を取得
-        $data = $data + array('user' => User::find($data['u_id']));
+        $user = User::select('users.id','name','profile','pic','year','month','engineer_history','work_flg')
+                        ->leftJoin( 'profiles' , 'users.id' , 'profiles.user_id' )
+                        ->where( 'delete_flg',0 )
+                        ->where( 'users.id',$data['u_id'] )
+                        ->first();
 
-    
+        //ユーザー情報に使用言語情報を追加
+        $user = MyFunc::addSkills( $user ,$user_flg = true );
 
-        if(!empty($user_id && empty($data['user']))){
+        if(!empty($user_id && empty($user))){
             Log::debug('パラメータ改竄の可能性あり');
             return redirect('/outputlist');
         }
 
-        //リレーションで結合されたプロフィール情報を取得
-        $profile =  $data['user']->profile;
-        //コレクションオブジェクトを配列化
-        $profile =  $profile->toArray();
-            
-        //profileの配列データをオブジェクトdata['user']に追加→bladeでの記述を簡単にするため
-        foreach($profile as $key => $value){
-            $temp = $data['user'];
-            $temp[$key] = $value;
-            $data['user'] = $temp;
-        }
-
-        //ユーザー保有スキルを配列形式でセット→bladeでforeachで展開するため
-        $data = $data + array('user_skill'=> $this->getUserSkill($data['user']));
+        //viewで渡すために連想配列形式で$dataへ格納
+        $data = $data + array('user' => $user );
 
         //アウトプットを取得する
-        //検索条件がある場合（ポスト送信判定）
-        if ($req->isMethod('post')){
+        //ポスト送信判定
+        if ($req->isMethod('post')){ //検索条件がある場合
             //トークンの削除
             unset($req['_token']);
             $search = $req->all();
 
             if(!empty(array_filter($search))){ 
               
-                $output= [
-                    'op_lists' => $this->getOpLists($data['u_id'],$search)
-                ];
-            }else{
+                $user_output = Myfunc::getOpLists( $data['u_id'] , $search);
 
-                $output = [
-                    'op_lists' => User::select()
-                                    ->leftJoin('outputs','users.id','outputs.user_id')
-                                    ->where('delete_flg',0)->where('user_id',$data['u_id'])
-                                    ->get()
-                    ];
+            }else{ //検索条件ない場合
+
+                $user_output = MyFunc::getOpLists( $data['u_id'] , $search = false );
+
             }
 
         //検索条件なし（単純にプロフィール表示の場合）
         }else{
 
-            $output = [
-                    'op_lists' => User::select()
-                                    ->leftJoin('outputs','users.id','outputs.user_id')
-                                    ->where('delete_flg',0)->where('user_id',$data['u_id'])
-                                    ->get()
-                    ];
-            //リレーションで結合されたアウトプット情報を取得
-            //$output_r = ['op_lists' => $data['user']->outputs];
+            $user_output = MyFunc::getOpLists( $data['u_id'] , $search = false );
+
         }
+        //各アウトプットに使用プログラミング言語情報を格納
+        $user_output = MyFunc::addSkills($user_output);
 
-        //アウトプットで使用されたスキル（言語）情報を連想配列形式で取得
-        $output = $output + array('op_skill' => $this->getOpSkill($output));
+        //各アウトプットにライク数を格納
+        $user_output = MyFunc::addLike($user_output);
 
-        //アウトプットのライク数を連想配列形式で取得
-        $output = $output + array('op_like' => $this->getOpLike($output));
-     
+        //viewで渡すために連想配列形式で$dataへ格納
+        $data = $data + array( 'outputs' => $user_output);
+
         //プロフィールが自分の場合の処理
         if($data['u_id'] == $data['my_id']){
             //インフォメーション情報を取得
-            $temp = Information::select('msg','created_at')->get();
+            $info_top  = Information::select('msg','created_at')->get();
 
-            $info = [
-                'info' => $temp->toArray()
-            ];
-       
-            Log::debug($info);
 
             //インフォメーション（メッセージ)を取得
-            $info = $info + array('info_msg' => $this->infoMsg($data['my_id']));
+            $info_msg  = $this->infoMsg($data['my_id']);
 
             //インフォメーション（フレンド情報）を取得
-            //my_idで検索したフレンドのUserテーブルとリレーションされたprofileテーブルの情報が戻ってくる
-            $info = $info + array('info_friends' => $this->infoFriend($data['my_id']));
+            $info_friend = $this->infoFriend($data['my_id']);
 
-            $data = $data + $output + $info +$search;
+            $info = [
+                        'info_top' => $info_top,
+                        'info_msg' => $info_msg,
+                        'info_friends' => $info_friend,
+                    ];
+
+            $data = $data + $info;
 
             $req->flash();
             return view('contents.profile',$data);
@@ -129,7 +116,7 @@ class ProfileController extends Controller{
             ];
 
       
-            $data = $data + $output + $friend + $search;
+            $data = $data + $friend;
 
             $req->flash();
             return view('contents.profile',$data);
@@ -139,143 +126,31 @@ class ProfileController extends Controller{
        
     }
 
-
-    public function getUserSkill($object){
-
-            $result = array(
-                        'HTML' => $object->html_flg ,
-                        'CSS' => $object->css_flg ,
-                        'javascript・jquery' => $object->js_jq_flg ,
-                        'SQL' => $object->sql_flg ,
-                        'JAVA' => $object->java_flg ,
-                        'PHP' => $object->php_flg ,
-                        'PHP(オブジェクト指向)' => $object->php_oj_flg ,
-                        'PHP(フレームワーク)' => $object->php_fw_flg ,
-                        'ruby' => $object->ruby_flg ,
-                        'rails' => $object->rails_flg ,
-                        'laravel' => $object->laravel_flg ,
-                        'swift' => $object->swift_flg ,
-                        'scala' => $object->scala_flg ,
-                        'go' => $object->go_flg ,
-                        'kotolin' => $object->kotolin_flg
-                    );
-
-            return $result;
-    }
-
-    public function getOpLists($id,$search){
-        $count = 0;
-                $sql = 'SELECT  op.id , op.user_id , op.op_name , op.explanation , op.pic_main ,
-                        op.movie ,op.html_flg , op.css_flg ,
-                        op.js_jq_flg , op.sql_flg , op.java_flg , op.php_flg , op.php_oj_flg , 
-                        op.php_fw_flg , op.ruby_flg , op.rails_flg , op.laravel_flg , 
-                        op.swift_flg , op.scala_flg , op.go_flg , op.kotolin_flg ,
-                        op.created_at , p.pic AS pic_user
-                FROM `outputs` AS op LEFT JOIN profiles AS p ON op.user_id = p.user_id WHERE ';
-
-                //検索条件にキーワードが指定されている場合
-                if(!empty($search['keyword'])){
-                    $sql .= 'op.op_name LIKE :op_name OR op.explanation LIKE :explanation ';
-                    $data['op_name'] = '%'.$search['keyword'].'%';
-                    $data['explanation'] = '%'.$search['keyword'].'%';
-                    $count++;
-                }
-                unset($search['keyword']);
-
-                //検索条件によってsqlを動的に書き換えるための処理
-                foreach($search as $key => $value){
-                    //検索条件の言語にチェックがある場合
-                    if(!empty($search[$key])){
-                        //sql文への追記が初回の場合はANDを付けない
-                        if($count === 0){
-                            $sql .= 'op.'.$key.'= :'.$key.' ';
-                            $data[$key] = $value;
-                            $count++;
-                        }else{
-                            $sql .= 'AND op.'.$key.'= :'.$key.' ';
-                            $data[$key] = $value;
-                            $count++;
-                        }
-                    }
-                }
-         
-                //sqlの最後に必ず追記する
-                $sql .= 'AND op.delete_flg = :delete_flg AND op.user_id = :user_id ORDER BY op.created_at DESC';
-
-                $data['delete_flg'] = 0;
-                $data['user_id'] = $id;
-
-                $result = DB::select($sql,$data);
-
-                return $result;
-                
-        }
-
-    public function getOpSkill($objects){
-
-        $result = array();
-        
-        if(!empty($objects['op_lists'])){
-
-            foreach($objects['op_lists'] as $key => $object){
-                $result[$key] = array(
-                            'HTML' => $object->html_flg ,
-                            'CSS' => $object->css_flg ,
-                            'javascript・jquery' => $object->js_jq_flg ,
-                            'SQL' => $object->sql_flg ,
-                            'JAVA' => $object->java_flg ,
-                            'PHP' => $object->php_flg ,
-                            'PHP(オブジェクト指向)' => $object->php_oj_flg ,
-                            'PHP(フレームワーク)' => $object->php_fw_flg ,
-                            'ruby' => $object->ruby_flg ,
-                            'rails' => $object->rails_flg ,
-                            'laravel' => $object->laravel_flg ,
-                            'swift' => $object->swift_flg ,
-                            'scala' => $object->scala_flg ,
-                            'go' => $object->go_flg ,
-                            'kotolin' => $object->kotolin_flg
-                        );
-                }
-        }
-        
-        return $result;
-    }
-
-    public function getOpLike($objects){
-        
-        $count = "";
-        if(!empty($objects['op_lists'])){
-            foreach($objects['op_lists'] as $key => $object){
-                $count[$key] = Likeoutput::where('op_id', $object->id)->count();
-            }
-        }
-        return $count;
-    }
-
     public function infoMsg($id){
+
         try{
 
-            $boards = array();
+            $msg_boards = array();
             
-            Log::debug('ステップ①：掲示板データ取得'); 
+            //Log::debug('ステップ①：メッセージ掲示板データ取得'); 
 
-            $sql = 'SELECT id , my_id , partner_id
-                    FROM `boards` 
-                    WHERE (my_id = :my_id OR partner_id = :partner_id ) AND delete_flg = :delete_flg';
+            //ステップ①：メッセージ掲示板データ取得
+            $msg_boards = Board::select('id' , 'my_id' , 'partner_id')
+                                    ->where( 'delete_flg' , 0 )
+                                    ->where( function ( $query ) use($id){
+                                        $query->where('my_id',$id)  
+                                                ->orWhere('partner_id',$id);
+                                    })
+                                    ->get();
 
-            $data = array('my_id' => $id ,'partner_id' => $id , 'delete_flg' => 0); 
-
-            $boards= DB::select($sql,$data);
-    
-    
-            if(!empty($boards)){
+            if(!$msg_boards->isEmpty()){
     
                     Log::debug('ステップ②：掲示板データを掲示板IDとパートナーIDに整理する');
                         //$boardのデータは、my_idもしくはpartner_idが自分のidと一致する掲示板情報を取得している
                         //partner_idがメッセージ相手のidになるように整理する
                         //my_idは不要
                  
-                        foreach($boards as $key => $board){
+                        foreach($msg_boards  as $key => $board){
                             //my_idが自分のidだった場合はそのままpartner_idを格納
                             if($board->my_id === $id){
                                 $board_data[$key]= array(
@@ -291,7 +166,7 @@ class ProfileController extends Controller{
                                                     );          
                             }
                         }
-               
+                   
                     Log::debug('掲示板IDとパートナーID'.print_r($board_data,true));
                     log::debug('ステップ③：メッセージデータを取得'); 
                     log::debug('ステップ④：パートナー画像取得'); 
@@ -315,7 +190,7 @@ class ProfileController extends Controller{
               
 
                             //掲示板画面に遷移しただけでメッセージのやり取りをしていない場合は処理を行わない
-                            if(!empty($msg[$key]) || !empty($partner[$key]) ){
+                            if(!empty($msg[$key]) || !empty($partner_prof[$key]) ){
                                 //オブジェクトのメンバを連想配列として格納する
                                 $result[$key]['id'] = $partner_prof[$key][0]->user_id;
                                 $result[$key]['name'] = $partner_prof[$key][0]->name;
@@ -325,7 +200,10 @@ class ProfileController extends Controller{
                                 $result[$key]['created_at'] = $msg[$key][0]->created_at;
                             }
                     }           
+                 
                 return $result;
+                
+                 
             }
 
             return $result;
@@ -339,20 +217,28 @@ class ProfileController extends Controller{
     public function infoFriend($id){
         $result = array();
 
-        $friends = Frienduser::select('friend_id')->where('user_id',$id)->get();
+        $friends = Frienduser::select('friend_id')
+                                ->where('user_id',$id)
+                                ->get();
 
-        if(!empty($friends)){
+        if(!$friends->isEmpty()){
             foreach($friends as $key => $friend){
-                $result[$key] = User::find($friend->friend_id);
+                $result[$key] = User::select('users.id','name','pic',)
+                                        ->leftJoin( 'profiles' , 'users.id' , 'profiles.user_id' )
+                                        ->where( 'delete_flg',0 )
+                                        ->where( 'users.id',$friend->friend_id )
+                                        ->first();
             }
         }
-
+      
         return $result;
     }
 
     public function checkFriend($u_id,$my_id){
         //フレンド登録しているか確認 （返り値は1かnull)
-        $flg = Frienduser::where('user_id',$my_id)->where('friend_id',$u_id)->count();
+        $flg = Frienduser::where('user_id',$my_id)
+                            ->where('friend_id',$u_id)
+                            ->count();
 
         //nullの場合は0を格納
         if(empty($flg)){

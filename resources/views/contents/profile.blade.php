@@ -3,12 +3,12 @@
 @section('menu')
     @if($u_id == $my_id)
         <ul>
-            <li><a href="/board">掲示板</a></li>
+            <li><a href="/outputList">掲示板</a></li>
             <li><a href="/logout">ログアウト</a></li>
         </ul>
     @else
         <ul>
-            <li><a href="/board">掲示板</a></li>
+            <li><a href="/outputList">掲示板</a></li>
             <li><a href="/profile">マイページ</a></li>
             <li><a href="/logout">ログアウト</a></li>
         </ul>
@@ -71,9 +71,9 @@
             <tr>
                 <th align="left">習得言語</th>
                 <td>
-                        @foreach($user_skill as $lang => $value)
-                            @if($user_skill[$lang]==1)
-                                <span>{{ $lang.' , ' }}</span>
+                        @foreach($user->skill as $language => $value)
+                            @if($user->skill[$language]==1)
+                                <span>{{ Skills::get($language).' , ' }}</span>
                             @endif
                         @endforeach
                 </td>
@@ -98,11 +98,11 @@
 
             <!--タブ：お知らせ欄-->
             <div class="content">
-                @if(!empty($info))
-                    @foreach($info as $key => $value)
+                @if(!empty($info_top))
+                    @foreach($info_top as $info)
                 
-                        <div>{{ $info[$key]['created_at'] }}</div>
-                        <div>{{ $info[$key]['msg'] }}</div>
+                        <div>{{ $info->created_at }}</div>
+                        <div>{{ $info->msg }}</div>
 
                     @endforeach
 
@@ -156,7 +156,7 @@
                     @foreach($info_friends as $friend)
                         <a href="<?php echo 'profDetail.php?u_id='.$friend->id; ?>">
                             <div class="info-friend-wrap">
-                                <div class="info-friend-img" style="background-image: url({{ $friend->profile->pic ? $friend->profile->pic.');' : 'storage/no_image.png);' }}"></div>
+                                <div class="info-friend-img" style="background-image: url({{ $friend->pic ? $friend->pic.');' : 'storage/no_image.png);' }}"></div>
                                 <h3>{{ $friend->name ? $friend->name : 'no-name' }}</h3>
                             </div>
                         </a>
@@ -275,8 +275,8 @@
         @endif
 
         <!--　アウトプットをパネルで一覧表示 -->
-        @if(!empty($op_lists))
-            @foreach($op_lists as $key => $op_list)
+        @if(!empty($outputs))
+            @foreach($outputs as $key => $output)
                 <div class="panel-list">
                     
                     @if($u_id !== $my_id)
@@ -296,8 +296,8 @@
                             <i class="fas fa-times js-menu-icon" style="display: none;"></i>
                             <nav style="display: none;">
                                 <ul>
-                                    <li><a href="outputEdit/{{ $op_list->id }}">編集</a></li>
-                                    <li class="op-delete" aria-hidden="true" data-deleteid="{{ $op_list->id }}">削除</li>
+                                    <li><a href="outputEdit/{{ $output->id }}">編集</a></li>
+                                    <li class="op-delete" aria-hidden="true" data-deleteid="{{ $output->id }}">削除</li>
                                 </ul>
                             </nav>
                         </div>
@@ -305,34 +305,34 @@
                     @endif
                 
                 <div class="wrap">
-                        <a href="{{ $u_id === $my_id ? '/outputEdit/'.$op_list->id : 'outputDetail/'.$op_list->id }}" class="panel">
-                            <p class="panel-title">作品名 : {{ $op_list->op_name }}</p>
+                        <a href="{{ $u_id === $my_id ? '/outputEdit/'.$output->id : 'outputDetail/'.$output->id }}" class="panel">
+                            <p class="panel-title">作品名 : {{ $output->name }}</p>
                             <div class="panel-img">
-                                <img src="{{ $op_list->pic_main }}">
+                                <img src="{{ $output->pic_main }}">
                             </div>
                             <div class="panel-comment">
                                 <label>【アウトプット概要】
-                                    <p>{{ $op_list->explanation }}</p>
+                                    <p>{{ $output->explanation }}</p>
                                 </label>
                             </div>
                             <div class="panel-skills">
                                 <label>【使用言語】
                                 <p>
-                                    @foreach($op_skill[$key] as $lang => $value)
-                                        @if($op_skill[$key][$lang]==1)
-                                            {{ $lang.' , ' }}
+                                    @foreach($output->skill as $language => $value)
+                                        @if($output->skill[$language]==1)
+                                            {{ Skills::get($language).' , ' }}
                                         @endif
                                     @endforeach
                                 </p>
                                 </label>
                             </div>
                         </a>
-                    <p class="post-date">投稿日： {{ $op_list->created_at }}</p>
+                    <p class="post-date">投稿日： {{ $output->created_at }}</p>
                     <div class="like-icon-area">
-                        <i class="fa fa-heart icn-like js-click-like {{ !$op_like[$key] ?: 'active' }}" aria-hidden="true" data-output="{{ $op_list->id }}">
+                        <i class="fa fa-heart icn-like js-click-like {{ !$output->like ?: 'active' }}" aria-hidden="true" data-output="{{ $output->id }}">
                             <span class="js-like-count">
-                            @if(!empty($op_like[$key]))
-                                {{ $op_like[$key] }}
+                            @if(!empty($output->like))
+                                {{ $output->like }}
                             @else
                                 {{ "" }}
                             @endif    

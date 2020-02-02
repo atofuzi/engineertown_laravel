@@ -88,14 +88,14 @@
     <!--インフォメーションエリア-->
     <section id="info" class="info-area">
         <ul class="js-tab">
-            <li>お知らせ</li>
-            <li>メッセージ</li>
-            <li>フレンド</li>
+            <li v-on:click="change('1')" v-bind:class="{'active': isActive === '1'}">お知らせ</li>
+            <li v-on:click="change('2')" v-bind:class="{'active': isActive === '2'}">メッセージ</li>
+            <li v-on:click="change('3')" v-bind:class="{'active': isActive === '3'}">フレンド</li>
         </ul>
 
         <!-- タブ切替表示-->
         <div class="js-contents">
-
+            <template v-if="isActive === '1' ">
             <!--タブ：お知らせ欄-->
             <div class="content">
                 @if(!empty($info_top))
@@ -111,6 +111,8 @@
                 @endif
             </div>
 
+            </template>
+            <template v-else-if="isActive === '2' ">
             <!--タブ：メッセージボード欄-->
 
             <div class="content" id="js-scroll-bottom">
@@ -149,6 +151,8 @@
                 @endforeach
             </div>
 
+            </template>
+            <template v-else-if="isActive === '3' ">
             <!--タブ：フレンドリスト欄-->
 
             <div class="content">
@@ -163,6 +167,7 @@
                     @endforeach
                     </div>
             </div>
+            </template>
         </div>
     </section>
     

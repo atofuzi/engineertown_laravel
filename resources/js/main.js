@@ -1,29 +1,20 @@
 
-    //タブの切替機能
-    $(function() {
-         //マイページのタブ切替の処理
-	    $('.js-tab li:nth-child(1)').addClass('current');
-	    $('.js-tab li').click(function() {
-		    var num = $(this).parent().children('li').index(this);
-		    $('.js-tab li').removeClass('current').eq(num).addClass('current');
-		
-		    $(this).parent().next().children('.content').hide().eq(num).show();
-	    }).first().click();
-
-    //メニューの表示機能
-    var $menu = $('.js-menu-icon');
-
-    $menu.on('click',function(){
-        var num =  $(this).parent().find('i').index(this);
-        var $num =  $(this).parent().find('nav');
-        $(this).parent().find('i').show().eq(num).hide();
-
-        if($num.css('display') == 'none'){
-            $num.show();
-        }else{
-            $num.hide();
+//タブの切替機能
+new Vue({
+    el: '#info',
+    data:{
+        isActive: '1'
+    },
+    methods: {
+        change: function(num){
+            this.isActive = num
         }
-    });
+    }
+})
+
+    
+$(function() {
+        
 
     //文字カウンター
 

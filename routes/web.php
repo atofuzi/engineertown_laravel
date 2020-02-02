@@ -56,3 +56,8 @@ Route::post('/outputList','OpListController@showList');
 
 //ログアウトのルート
 Route::get('/logout','Auth\LoginController@logout');
+
+//Vue　サンプルのルート
+Route::get('/sample', function () {
+    return view('sample');
+});

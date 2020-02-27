@@ -3,7 +3,7 @@
 @section('menu')
 
     <ul>
-        <li><a href="login.php">掲示板</a></li>
+        <li><a href="/outputList">掲示板</a></li>
         <li><a href="/login">ログイン</a></li>
     </ul>
 @endsection

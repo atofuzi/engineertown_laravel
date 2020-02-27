@@ -16,6 +16,10 @@ use Log;
 
 class ProfileController extends Controller{
 
+    public function getInfo(Request $req){
+        return "「axiosで取得しました」";
+    }
+
     public function showProfile(Request $req,$user_id=""){
 
         $search = [

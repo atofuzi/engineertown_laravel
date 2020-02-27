@@ -14,27 +14,25 @@ use DB;
 class profEditController extends Controller{
 
     public function getProfile(Request $req){
+        
         //セッションからユーザーIDを取得
         $user_id = $req->session()->get('user_id');
         
         $data['user'] = $this->getUserProf($user_id);
-       
-        $req->flash();
 
         return view('contents.profEdit',$data);
 
     }
     
     public function registerProfile(ProfileRequest $req){
-
         //$this->validate($req->year,Profile::$rules);
         //$validatedData = $req->validate([
-            //'name' => ['required','max:255'],
+            //'name' => ['required',"min:6",'max:255'],
             //'profile' => ['string','min:6','max:255'],
             //'pic' => ['file','image','mimes:jpeg,png,jpg,gif','max:2048'],
             //'year' => ['numeric'],
             //'month' => ['numeric']
-        //]);
+       //]);
     
 
         //セッションからユーザーIDを取得

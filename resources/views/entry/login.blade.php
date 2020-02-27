@@ -3,7 +3,7 @@
 @section('menu')
     <ul>
         <li><a href="outputList.php">掲示板</a></li>
-        <li><a href="/signup">ユーザー登録</a></li>
+        <li><a href="/register">ユーザー登録</a></li>
     </ul>
 @endsection
 
@@ -17,7 +17,7 @@
                     <input id="email" type="text" name="email" placeholder="email" class="@error('email') err-input @enderror" value="{{ old('email') }}" required autocomplate="email" autofocus>
                 </div>
                 <div class="pass-area">
-                    @include('subview.err_msg',['err' => 'email'])
+                    @include('subview.err_msg',['err' => 'password'])
                     <input id="password" type="password" name="password" placeholder="パスワード" class="@error('password') err-input @enderror" reqired autocomplate="current-password"><br>
                 </div>
                 <div class="text-area">

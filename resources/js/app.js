@@ -24,12 +24,54 @@ Vue.component('example-component', require('./components/ExampleComponent.vue').
 //追加
 Vue.component('sample-component' , require('./components/SampleComponent.vue').default);
 
+Vue.component('input-text-component' , require('./components/InputTextComponent.vue').default);
+
+Vue.component('textarea-component' , require('./components/TextareaComponent.vue').default);
+
+Vue.component('skills-component' , require('./components/SkillsComponent.vue').default);
+
+Vue.component('input-radio-component' , require('./components/InputRadioComponent.vue').default);
+
 /**
  * Next, we will create a fresh Vue application instance and attach it to
  * the page. Then, you may begin adding components to this application
  * or customize the JavaScript scaffolding to fit your unique needs.
  */
 
-const app = new Vue({
+new Vue({
     el: '#app',
+});
+
+new Vue({
+    el: '#vue-textarea',
+});
+
+new Vue({
+    el: '#vue-input-text-1',
+});
+
+new Vue({
+    el: '#vue-input-text-2',
+});
+
+new Vue({
+    el: '#vue-skills',
+});
+
+new Vue({
+    el: '#vue-radio',
+});
+
+
+//???????
+new Vue({
+    el: "#info",
+    data: {
+        isActive: "1"
+    },
+    methods: {
+        change: function(num) {
+            this.isActive = num;
+        }
+    }
 });

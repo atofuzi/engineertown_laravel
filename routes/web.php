@@ -27,6 +27,7 @@ Route::get('profile/{user_id?}','profileController@showProfile');
 //profileへのルート(検索時のポスト送信)
 Route::post('profile/{user_id?}','profileController@showProfile');
 
+
 //profileへのルート(getパラメータ有り)
 //Route::get('profile/{user_id}','profileController@showProfile');
 
@@ -61,3 +62,5 @@ Route::get('/logout','Auth\LoginController@logout');
 Route::get('/sample', function () {
     return view('sample');
 });
+//axiosでのデータ取得
+Route::get('/info','ProfileController@getInfo');

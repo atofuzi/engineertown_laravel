@@ -104,6 +104,7 @@ return [
     */
 
     'attributes' => [
+        'name1' => '名前１',
         'name' => '名前',
         'password' => 'パスワード',
         'password_confirmation' =>  '確認用パスワード',
